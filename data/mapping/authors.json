@@ -1,0 +1,17 @@
+{
+    "dynamic": "true",
+    "properties": {
+        "summary_stats":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "international":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "counts_by_year":{
+            "dynamic": "false",
+            "properties":{}
+        }   
+    }
+}

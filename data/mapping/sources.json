@@ -1,0 +1,13 @@
+{
+    "dynamic": "true",
+    "properties": {
+        "summary_stats":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "international":{
+            "dynamic": "false",
+            "properties":{}
+        }
+    }
+}

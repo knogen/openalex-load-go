@@ -1,0 +1,41 @@
+{
+    "dynamic": "true",
+    "properties": {
+        "biblio":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "summary_stats":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "sustainable_development_goals":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "title":{
+            "type": "text",
+            "index": false
+        },
+        "locations":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "open_access":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "primary_location":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "best_oa_location":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "related_works":{
+            "type": "text",
+            "index": false
+        }
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "dynamic": "true",
+    "properties": {
+        "counts_by_year":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "roles":{
+            "dynamic": "false",
+            "properties":{}
+        },
+        "summary_stats":{
+            "dynamic": "false",
+            "properties":{}
+        }
+        
+    }
+}
