@@ -12,101 +12,101 @@ func init() {
 	// log.Info().Msg("start")
 }
 
-type dataLoadInterface interface {
+type DataLoadInterface interface {
 	GetProjectName() string
 	GetMergeIDsSet() *hashset.Set
 	ParseData(obj map[string]interface{})
 	GetProjectGzFiles() []string
 }
 
-type baseProject struct {
+type BaseProject struct {
 	DataPath    string
 	ProjectName string
 }
 
 // get project data file
-func (c *baseProject) GetProjectGzFiles() []string {
+func (c *BaseProject) GetProjectGzFiles() []string {
 	rootPath := path.Join(c.DataPath, c.ProjectName)
 	files := getSubPathGzFiles(rootPath)
 	return files
 }
 
-func (c *baseProject) GetProjectName() string {
+func (c *BaseProject) GetProjectName() string {
 	return c.ProjectName
 }
 
-func (c *baseProject) GetMergeIDsSet() *hashset.Set {
+func (c *BaseProject) GetMergeIDsSet() *hashset.Set {
 	return getMergeIDs(c.ProjectName, c.DataPath)
 }
 
-// func (c *baseProject) parseData(obj map[string]interface{}) {
+// func (c *BaseProject) parseData(obj map[string]interface{}) {
 // 	log.Panic().Msg("please rewrite parseData method")
 // }
 
 // get a base project
-func newBaseProject(projectName, dataPath string) *baseProject {
+func NewBaseProject(projectName, dataPath string) *BaseProject {
 	log.Info().Str("project", projectName).Msg("start")
-	return &baseProject{
+	return &BaseProject{
 		DataPath:    dataPath,
 		ProjectName: projectName,
 	}
 }
 
 type ConceptProject struct {
-	*baseProject
+	*BaseProject
 }
 type InstitutionProject struct {
-	*baseProject
+	*BaseProject
 }
 type PublisherProject struct {
-	*baseProject
+	*BaseProject
 }
 type FunderProject struct {
-	*baseProject
+	*BaseProject
 }
 type SourceProject struct {
-	*baseProject
+	*BaseProject
 }
 type AuthorProject struct {
-	*baseProject
+	*BaseProject
 }
 type WorkProject struct {
-	*baseProject
+	*BaseProject
 }
 
 func NewConceptProject(dataPath string) *ConceptProject {
-	baseProject := newBaseProject("concepts", dataPath)
-	return &ConceptProject{baseProject}
+	BaseProject := NewBaseProject("concepts", dataPath)
+	return &ConceptProject{BaseProject}
 }
 
 func NewInstitutionProject(dataPath string) *InstitutionProject {
-	baseProject := newBaseProject("institutions", dataPath)
-	return &InstitutionProject{baseProject}
+	BaseProject := NewBaseProject("institutions", dataPath)
+	return &InstitutionProject{BaseProject}
 }
 
 func NewPublisherProject(dataPath string) *PublisherProject {
-	baseProject := newBaseProject("publishers", dataPath)
-	return &PublisherProject{baseProject}
+	BaseProject := NewBaseProject("publishers", dataPath)
+	return &PublisherProject{BaseProject}
 }
 
 func NewFunderProject(dataPath string) *FunderProject {
-	baseProject := newBaseProject("funders", dataPath)
-	return &FunderProject{baseProject}
+	BaseProject := NewBaseProject("funders", dataPath)
+	return &FunderProject{BaseProject}
 }
 
 func NewSourceProject(dataPath string) *SourceProject {
-	baseProject := newBaseProject("sources", dataPath)
-	return &SourceProject{baseProject}
+	BaseProject := NewBaseProject("sources", dataPath)
+	return &SourceProject{BaseProject}
 }
 
 func NewAuthorProject(dataPath string) *AuthorProject {
-	baseProject := newBaseProject("authors", dataPath)
-	return &AuthorProject{baseProject}
+	BaseProject := NewBaseProject("authors", dataPath)
+	return &AuthorProject{BaseProject}
 }
 
 func NewWorkProject(dataPath string) *WorkProject {
-	baseProject := newBaseProject("works", dataPath)
-	return &WorkProject{baseProject}
+	BaseProject := NewBaseProject("works", dataPath)
+	return &WorkProject{BaseProject}
 }
 
 func (c *ConceptProject) ParseData(obj map[string]interface{}) {

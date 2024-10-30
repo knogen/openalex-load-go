@@ -76,7 +76,7 @@ func initElastic(projectName, esIndex string, esClient *elasticsearch8.Client) {
 }
 
 // get project data file
-func handleFile(c dataLoadInterface, filePath string, mergeIDSet *hashset.Set, BulkIndexer esutil.BulkIndexer) {
+func handleFile(c DataLoadInterface, filePath string, mergeIDSet *hashset.Set, BulkIndexer esutil.BulkIndexer) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		log.Panic().Err(err).Msg("file 读取失败")
@@ -154,7 +154,7 @@ func handleFile(c dataLoadInterface, filePath string, mergeIDSet *hashset.Set, B
 
 }
 
-func RuntimeFlow(c dataLoadInterface, runtimeCount int, version string) {
+func RuntimeFlow(c DataLoadInterface, runtimeCount int, version string) {
 	esIndexName := c.GetProjectName() + "_" + version
 	esClient := getElasticClient()
 	initElastic(c.GetProjectName(), esIndexName, esClient)

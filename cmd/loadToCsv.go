@@ -1,5 +1,5 @@
 /*
-Copyright © 2023 ider <admin@knogen.com>
+Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 */
 package cmd
 
@@ -9,15 +9,13 @@ import (
 	"os"
 
 	"github.com/rs/zerolog/log"
-
-	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
 
-// loadCmd represents the load command
-var loadCmd = &cobra.Command{
-	Use:   "load",
-	Short: "load date to elasticsearch",
+// loadToCsvCmd represents the loadToCsv command
+var loadToCsvCmd = &cobra.Command{
+	Use:   "loadToCsv",
+	Short: "load data to csv",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -25,7 +23,6 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		os.Setenv("ELASTICSEARCH_URL", "http://192.168.50.3:9201")
 		log.Info().Msg("project start")
 		// log.Print(cmd.Flags().GetString("foo"))
 		projectIndex, err := cmd.Flags().GetInt("project")
@@ -41,30 +38,43 @@ to quickly create a Cobra application.`,
 			treadCount = 5
 		}
 
-		Version := "20231101"
+		outPath, _ := cmd.Flags().GetString("out")
+		_, err = os.Stat(outPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				log.Printf("The path %s does not exist.\n", outPath)
+				return
+			}
+			log.Printf("Error checking path existence: %v\n", err)
+			return
+		}
+
+		Version, _ := cmd.Flags().GetString("version")
+		log.Printf("OpenAlex version: %v\n", Version)
+
 		foldPath := fmt.Sprintf("/mnt/sata3/openalex/openalex-snapshot-v%s/data", Version)
 		switch projectIndex {
 		case 1:
 			cp := load.NewConceptProject(foldPath)
-			load.RuntimeFlow(cp, treadCount, Version)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
 		case 2:
 			cp := load.NewInstitutionProject(foldPath)
-			load.RuntimeFlow(cp, treadCount, Version)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
 		case 3:
 			cp := load.NewPublisherProject(foldPath)
-			load.RuntimeFlow(cp, treadCount, Version)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
 		case 4:
 			cp := load.NewFunderProject(foldPath)
-			load.RuntimeFlow(cp, treadCount, Version)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
 		case 5:
 			cp := load.NewSourceProject(foldPath)
-			load.RuntimeFlow(cp, treadCount, Version)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
 		case 6:
 			cp := load.NewAuthorProject(foldPath)
-			load.RuntimeFlow(cp, treadCount, Version)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
 		case 7:
 			cp := load.NewWorkProject(foldPath)
-			load.RuntimeFlow(cp, treadCount, Version)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
 		default:
 			log.Warn().Msg("Please set project index")
 		}
@@ -72,19 +82,10 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	rootCmd.AddCommand(loadToCsvCmd)
 
-	rootCmd.AddCommand(loadCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// loadCmd.PersistentFlags().String("foo", "ccwzz", "A help for foo")
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	loadCmd.Flags().IntP("treadCount", "t", 5, "how many thread count do you want?")
-	loadCmd.Flags().IntP("project", "p", 0, `What object do you want load?
+	loadToCsvCmd.Flags().IntP("treadCount", "t", 5, "how many thread count do you want?")
+	loadToCsvCmd.Flags().IntP("project", "p", 0, `What object do you want load?
 	1: concept
 	2: instiution
 	3: publisher
@@ -94,4 +95,6 @@ func init() {
 	7: work
 	choose one
 	`)
+	loadToCsvCmd.Flags().StringP("out", "O", "/tmp/", `out data path`)
+	loadToCsvCmd.Flags().StringP("version", "v", "20241030", `openalex version`)
 }
