@@ -14,10 +14,11 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-func RuntimeToCsvFlow(c DataLoadInterface, runtimeCount int, version, outPath string) {
-	jsonFilePath := fmt.Sprintf("%s_%s.json.gz", c.GetProjectName(), version)
+func RuntimeToCsvFlow(c DataLoadInterface, runtimeCount int, version, outPath string, outFileCount int) {
+	jsonFilePath := fmt.Sprintf("%s_%s.json.gz-1", c.GetProjectName(), version)
 	jsonFilePath = filepath.Join(outPath, jsonFilePath)
-	log.Info().Str("jsonFilePath", jsonFilePath).Msg("out file path")
+	// log.Info().Str("jsonFilePath", jsonFilePath).Msg("out file path")
+	// log.Info().Int("runtionCount", runtimeCount).Msg("start")
 
 	fileChan := make(chan string, 10000)
 	for _, filePath := range c.GetProjectGzFiles() {
@@ -39,39 +40,48 @@ func RuntimeToCsvFlow(c DataLoadInterface, runtimeCount int, version, outPath st
 			wg.Done()
 		}()
 	}
+	fileWg := sync.WaitGroup{}
+	fileWg.Add(outFileCount)
 
-	lastWg := sync.WaitGroup{}
-	lastWg.Add(1)
-	go func() {
-		file, err := os.Create(jsonFilePath)
-		if err != nil {
-			fmt.Println("Error creating file:", err)
-			return
-		}
-		defer file.Close()
+	bar := progressbar.Default(-1)
+	for i := 0; i < outFileCount; i++ {
 
-		gzWriter := gzip.NewWriter(file)
-		defer gzWriter.Close()
+		jsonFilePath := fmt.Sprintf("%s_%s_p%v.json.gz", c.GetProjectName(), version, i)
+		jsonFilePath = filepath.Join(outPath, jsonFilePath)
 
-		bar := progressbar.Default(-1)
-		line := []byte("\n")
-		for row := range jsonChan {
-			_, err := gzWriter.Write(row)
+		go func() {
+			file, err := os.Create(jsonFilePath)
 			if err != nil {
-				log.Panic().Err(err)
+				fmt.Println("Error creating file:", err)
+				return
 			}
-			_, err = gzWriter.Write(line)
-			if err != nil {
-				log.Panic().Err(err)
+			// 创建缓冲写入器
+			writer := bufio.NewWriterSize(file, 100*1024*1024)
+			gzWriter := gzip.NewWriter(writer)
+
+			line := []byte("\n")
+			for row := range jsonChan {
+				_, err := gzWriter.Write(row)
+				if err != nil {
+					log.Panic().Err(err)
+				}
+				_, err = gzWriter.Write(line)
+				if err != nil {
+					log.Panic().Err(err)
+				}
+
+				bar.Add(1)
 			}
-			bar.Add(1)
-		}
-		lastWg.Done()
-	}()
+			gzWriter.Close()
+			writer.Flush()
+			file.Close()
+			fileWg.Done()
+		}()
+	}
 
 	wg.Wait()
 	close(jsonChan)
-	lastWg.Wait()
+	fileWg.Wait()
 	log.Info().Str("project", c.GetProjectName()).Msg("project finish")
 
 }

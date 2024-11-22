@@ -52,29 +52,31 @@ to quickly create a Cobra application.`,
 		Version, _ := cmd.Flags().GetString("version")
 		log.Printf("OpenAlex version: %v\n", Version)
 
+		outFileCount, _ := cmd.Flags().GetInt("outFileCount")
+
 		foldPath := fmt.Sprintf("/mnt/sata3/openalex/openalex-snapshot-v%s/data", Version)
 		switch projectIndex {
 		case 1:
 			cp := load.NewConceptProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 2:
 			cp := load.NewInstitutionProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 3:
 			cp := load.NewPublisherProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 4:
 			cp := load.NewFunderProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 5:
 			cp := load.NewSourceProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 6:
 			cp := load.NewAuthorProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 7:
 			cp := load.NewWorkProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
 		default:
 			log.Warn().Msg("Please set project index")
 		}
@@ -97,4 +99,5 @@ func init() {
 	`)
 	loadToCsvCmd.Flags().StringP("out", "O", "/tmp/", `out data path`)
 	loadToCsvCmd.Flags().StringP("version", "v", "20241030", `openalex version`)
+	loadToCsvCmd.Flags().IntP("outFileCount", "c", 1, `out put file Count`)
 }
