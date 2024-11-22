@@ -1,15 +1,30 @@
 package load
 
 import (
+	"context"
 	"path"
 	"strings"
 
 	"github.com/emirpasic/gods/sets/hashset"
 	"github.com/rs/zerolog/log"
+
+	"github.com/sethvargo/go-envconfig"
+)
+
+type projectConfig struct {
+	Version  string `env:"VERSION, default=v0.0.1"`
+	MongoUrl string `env:"Mongo_Url, default=mongo://localhost:27017"`
+}
+
+var (
+	ctx         = context.Background()
+	projectConf projectConfig
 )
 
 func init() {
-	// log.Info().Msg("start")
+	if err := envconfig.Process(ctx, &projectConf); err != nil {
+		log.Fatal().Err(err).Msg("failed to process env var")
+	}
 }
 
 type DataLoadInterface interface {

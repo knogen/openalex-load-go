@@ -1,3 +1,11 @@
+SHELL := /bin/bash
+
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
+
 a1:
 	go run main.go analyze authors20231218 -p 1 -t 40
 a2:
@@ -10,3 +18,6 @@ o1:
 
 o2:
 	go run main.go  loadToCsv -v 20241031  -O  /mnt/sata3/openalex/parse_output -t 40  -p 1  -c 1
+
+loadToMongo:
+	go run main.go loadToMongo
