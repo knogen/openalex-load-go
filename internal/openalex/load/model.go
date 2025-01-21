@@ -31,3 +31,15 @@ type worksMongo struct {
 // 	ReferencedWorksCount int   `json:"referenced_works_count" bson:"c"`
 // 	ReferencedWorks      []int `json:"referenced_works" bson:"o,omitempty"`
 // }
+
+type conceptsMongo struct {
+	ID          string `json:"id"`
+	DisplayName string `json:"display_name"`
+	Level       int    `json:"level"`
+	Description string `json:"description"`
+	Ancestors   []struct {
+		ID          string `json:"id"`
+		DisplayName string `json:"display_name"`
+		Level       int    `json:"level"`
+	} `json:"ancestors"`
+}

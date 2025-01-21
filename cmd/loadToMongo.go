@@ -24,6 +24,8 @@ to quickly create a Cobra application.`,
 		fmt.Println("loadToMongo called")
 
 		foldPath := fmt.Sprintf("/mnt/sata3/openalex/openalex-snapshot-v%s/data", "20241201")
+		cp2 := load.NewConceptProject(foldPath)
+		load.RuntimeToMongoFlow(cp2, 30)
 		cp := load.NewWorkProject(foldPath)
 		load.RuntimeToMongoFlow(cp, 30)
 	},
