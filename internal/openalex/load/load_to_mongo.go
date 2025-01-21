@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"sync"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -25,7 +24,7 @@ func RuntimeToMongoFlow(c DataLoadInterface, runtimeCount int) {
 
 	log.Info().Msg(projectConf.MongoUrl)
 	client := newMongoDataBase(projectConf.MongoUrl, projectConf.Version)
-	client.initIndex()
+	// client.initIndex()
 
 	if c.GetProjectName() != "works" {
 		log.Info().Str("project", c.GetProjectName()).Msg("unsupport the project")
@@ -41,34 +40,51 @@ func RuntimeToMongoFlow(c DataLoadInterface, runtimeCount int) {
 
 	mergeIDSet := c.GetMergeIDsSet()
 
-	workChan := make(chan worksMongo, 100000)
+	workChan := make(chan *worksMongo, 100000)
 	wg := sync.WaitGroup{}
 	wg.Add(runtimeCount)
 	for i := 0; i < runtimeCount; i++ {
 		// handle file
 		go func() {
 			for filePath := range fileChan {
-				handleFileToMongo(c, filePath, mergeIDSet, workChan)
+				handleFileToMongo(filePath, mergeIDSet, workChan)
 			}
 			wg.Done()
 		}()
 	}
 
-	bar := progressbar.Default(-1)
+	go func() {
+		wg.Wait()
+		close(workChan)
+	}()
 
-	workCache := []worksMongo{}
+	bar := progressbar.Default(-1, "load to cache")
+	workCache := []*worksMongo{}
+	linksInIDMap := make(map[int64]int32)
 	for obj := range workChan {
 		workCache = append(workCache, obj)
-		if len(workCache) > 40000 {
-			client.Insert_many(workCache)
-			workCache = []worksMongo{}
+		for _, linksOut := range obj.ReferencedWorks {
+			linksInIDMap[linksOut] += 1
 		}
 		bar.Add(1)
 	}
+	bar.Close()
 
-	if len(workCache) > 0 {
-		client.Insert_many(workCache)
+	bar = progressbar.Default(int64(len(workCache)), "save to mongo")
+	workInsertCache := []*worksMongo{}
+	for _, obj := range workCache {
+		obj.LinksInWorksCount = linksInIDMap[obj.ID]
+		workInsertCache = append(workInsertCache, obj)
+		if len(workInsertCache) > 40000 {
+			client.Insert_many(workInsertCache)
+			workInsertCache = []*worksMongo{}
+		}
+		bar.Add(1)
 	}
+	if len(workInsertCache) > 0 {
+		client.Insert_many(workInsertCache)
+	}
+	bar.Close()
 
 	wg.Wait()
 	log.Info().Str("project", c.GetProjectName()).Msg("project finish")
@@ -76,7 +92,8 @@ func RuntimeToMongoFlow(c DataLoadInterface, runtimeCount int) {
 }
 
 // get project data file
-func handleFileToMongo(c DataLoadInterface, filePath string, mergeIDSet *hashset.Set, workChan chan worksMongo) {
+func handleFileToMongo(filePath string, mergeIDSet *hashset.Set, workChan chan *worksMongo) {
+	// log.Debug().Str("file", filePath).Msg("start file decode")
 	file, err := os.Open(filePath)
 	if err != nil {
 		log.Panic().Err(err).Msg("file 读取失败")
@@ -110,17 +127,35 @@ func handleFileToMongo(c DataLoadInterface, filePath string, mergeIDSet *hashset
 			continue
 		}
 
-		var referencedWorks []int
+		var referencedWorks []int64
 
 		for _, ids := range obj.ReferencedWorks {
 			referencedWorks = append(referencedWorks, extractUrlID(ids))
 		}
 
-		workChan <- worksMongo{
+		conceptLv0 := []string{}
+		conceptLv1 := []string{}
+		conceptLv2 := []string{}
+		for _, item := range obj.Concepts {
+			if item.Level == 0 && item.Score > 0 {
+				conceptLv0 = append(conceptLv0, item.DisplayName)
+			}
+			if item.Level == 1 && item.Score > 0 {
+				conceptLv1 = append(conceptLv1, item.DisplayName)
+			}
+			if item.Level == 2 && item.Score > 0 {
+				conceptLv2 = append(conceptLv2, item.DisplayName)
+			}
+		}
+
+		workChan <- &worksMongo{
 			ID:                   ID,
-			PublicationYear:      obj.PublicationYear,
+			PublicationYear:      int32(obj.PublicationYear),
 			ReferencedWorksCount: obj.ReferencedWorksCount,
 			ReferencedWorks:      referencedWorks,
+			ConceptsLv0:          conceptLv0,
+			ConceptsLv1:          conceptLv1,
+			ConceptsLv2:          conceptLv2,
 		}
 
 	}
@@ -132,12 +167,12 @@ func handleFileToMongo(c DataLoadInterface, filePath string, mergeIDSet *hashset
 
 }
 
-func extractUrlID(url string) int {
+func extractUrlID(url string) int64 {
 	re := regexp.MustCompile(`/W(\d+)$`)
 	matches := re.FindStringSubmatch(url)
 	if len(matches) > 1 {
 		// matches[1] 包含匹配的数字部分
-		num, err := strconv.Atoi(matches[1])
+		num, err := strconv.ParseInt(matches[1], 10, 64)
 		if err != nil {
 			log.Warn().Str("url", url).Err(err).Msg("转换错误:")
 		}
@@ -169,16 +204,16 @@ func newMongoDataBase(mongoUrl string, version string) *mongoDataBase {
 	}
 }
 
-func (c *mongoDataBase) initIndex() {
-	mods := []mongo.IndexModel{
-		{Keys: bson.M{"publication_year": 1}},
-	}
-	_, err := c.database.Collection("works").Indexes().CreateMany(ctx, mods)
-	if err != nil {
-		log.Warn().Err(err).Msg("failed to create index")
-	}
+// func (c *mongoDataBase) initIndex() {
+// 	mods := []mongo.IndexModel{
+// 		{Keys: bson.M{"publication_year": 1}},
+// 	}
+// 	_, err := c.database.Collection("works").Indexes().CreateMany(ctx, mods)
+// 	if err != nil {
+// 		log.Warn().Err(err).Msg("failed to create index")
+// 	}
 
-}
+// }
 
 func (c *mongoDataBase) close() {
 	err := c.client.Disconnect(ctx)
@@ -187,7 +222,7 @@ func (c *mongoDataBase) close() {
 	}
 }
 
-func (c *mongoDataBase) Insert_many(items []worksMongo) {
+func (c *mongoDataBase) Insert_many(items []*worksMongo) {
 
 	opts := options.InsertMany().SetOrdered(false)
 
