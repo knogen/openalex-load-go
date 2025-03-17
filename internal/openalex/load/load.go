@@ -89,6 +89,10 @@ type WorkProject struct {
 	*BaseProject
 }
 
+type TopicProject struct {
+	*BaseProject
+}
+
 func NewConceptProject(dataPath string) *ConceptProject {
 	BaseProject := NewBaseProject("concepts", dataPath)
 	return &ConceptProject{BaseProject}
@@ -122,6 +126,11 @@ func NewAuthorProject(dataPath string) *AuthorProject {
 func NewWorkProject(dataPath string) *WorkProject {
 	BaseProject := NewBaseProject("works", dataPath)
 	return &WorkProject{BaseProject}
+}
+
+func NewTopicProject(dataPath string) *TopicProject {
+	BaseProject := NewBaseProject("topics", dataPath)
+	return &TopicProject{BaseProject}
 }
 
 func (c *ConceptProject) ParseData(obj map[string]interface{}) {
@@ -345,6 +354,17 @@ func (c *WorkProject) ParseData(obj map[string]interface{}) {
 
 }
 
+func (c *TopicProject) ParseData(obj map[string]interface{}) {
+
+	remove_empty_key(obj)
+	shorten_url(obj, []string{"id"})
+	shorten_url(obj["ids"], []string{"openalex", "wikipedia"})
+
+	for _, csItem := range iteratorList(obj["siblings"]) {
+		shorten_url(csItem, []string{"id"})
+	}
+
+}
 func Main() {
 	// mergeIDSet := getMergeIDs("sources", foldPath)
 	// log.Info().Int("size", mergeIDSet.Size()).Msg("start")

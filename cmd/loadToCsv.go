@@ -77,6 +77,9 @@ to quickly create a Cobra application.`,
 		case 7:
 			cp := load.NewWorkProject(foldPath)
 			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
+		case 8:
+			cp := load.NewTopicProject(foldPath)
+			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
 		default:
 			log.Warn().Msg("Please set project index")
 		}
@@ -95,6 +98,7 @@ func init() {
 	5：source
 	6: auther
 	7: work
+	8: topic
 	choose one
 	`)
 	loadToCsvCmd.Flags().StringP("out", "O", "/tmp/", `out data path`)
