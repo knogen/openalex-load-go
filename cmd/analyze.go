@@ -17,6 +17,7 @@ var analyzeCmd = &cobra.Command{
 计划使用流式分析，先使用原始文件分析，然后使用流式分析，最后使用结果进行优化。`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("analyze called")
+		
 	},
 }
 
