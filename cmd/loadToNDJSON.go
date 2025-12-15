@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// loadToCsvCmd represents the loadToCsv command
-var loadToCsvCmd = &cobra.Command{
-	Use:   "loadToCsv",
-	Short: "load data to csv",
+// loadToNDJSONCmd represents the loadToCsv command
+var loadToNDJSONCmd = &cobra.Command{
+	Use:   "loadToNDJSON",
+	Short: "load data to ndjson",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -54,32 +54,34 @@ to quickly create a Cobra application.`,
 
 		outFileCount, _ := cmd.Flags().GetInt("outFileCount")
 
-		foldPath := fmt.Sprintf("/mnt/sata3/openalex/openalex-snapshot-v%s/data", Version)
+		// foldPath := fmt.Sprintf("/mnt/sata3/openalex/openalex-snapshot-v%s/data", Version)
+		foldPath := fmt.Sprintf("/mnt/hg02/openalex-snapshot-v%s/data", Version)
+
 		switch projectIndex {
 		case 1:
 			cp := load.NewConceptProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
+			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 2:
 			cp := load.NewInstitutionProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
+			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 3:
 			cp := load.NewPublisherProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
+			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 4:
 			cp := load.NewFunderProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
+			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 5:
 			cp := load.NewSourceProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
+			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 6:
 			cp := load.NewAuthorProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
+			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 7:
 			cp := load.NewWorkProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
+			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
 		case 8:
 			cp := load.NewTopicProject(foldPath)
-			load.RuntimeToCsvFlow(cp, treadCount, Version, outPath, outFileCount)
+			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
 		default:
 			log.Warn().Msg("Please set project index")
 		}
@@ -87,10 +89,10 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	rootCmd.AddCommand(loadToCsvCmd)
+	rootCmd.AddCommand(loadToNDJSONCmd)
 
-	loadToCsvCmd.Flags().IntP("treadCount", "t", 5, "how many thread count do you want?")
-	loadToCsvCmd.Flags().IntP("project", "p", 0, `What object do you want load?
+	loadToNDJSONCmd.Flags().IntP("treadCount", "t", 5, "how many thread count do you want?")
+	loadToNDJSONCmd.Flags().IntP("project", "p", 0, `What object do you want load?
 	1: concept
 	2: instiution
 	3: publisher
@@ -101,7 +103,7 @@ func init() {
 	8: topic
 	choose one
 	`)
-	loadToCsvCmd.Flags().StringP("out", "O", "/tmp/", `out data path`)
-	loadToCsvCmd.Flags().StringP("version", "v", "20241030", `openalex version`)
-	loadToCsvCmd.Flags().IntP("outFileCount", "c", 1, `out put file Count`)
+	loadToNDJSONCmd.Flags().StringP("out", "O", "/tmp/", `out data path`)
+	loadToNDJSONCmd.Flags().StringP("version", "v", "20241030", `openalex version`)
+	loadToNDJSONCmd.Flags().IntP("outFileCount", "c", 1, `out put file Count`)
 }

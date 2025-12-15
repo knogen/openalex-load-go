@@ -42,6 +42,7 @@ type BaseProject struct {
 // get project data file
 func (c *BaseProject) GetProjectGzFiles() []string {
 	rootPath := path.Join(c.DataPath, c.ProjectName)
+	log.Info().Str("data path", rootPath).Msg("get project data files")
 	files := getSubPathGzFiles(rootPath)
 	return files
 }
@@ -221,6 +222,9 @@ func (c *AuthorProject) ParseData(obj map[string]interface{}) {
 }
 
 func (c *WorkProject) ParseData(obj map[string]interface{}) {
+	// v20251216
+	remove_key(obj, []string{"alternate_host_venues", "best_oa_location", "grants", "has_content", "host_venue"})
+
 	remove_key(obj, []string{"apc_list", "apc_paid", "ngrams_url", "cited_by_api_url", "sustainable_development_goals"})
 	remove_key(obj["ids"], []string{"openalex", "doi"})
 	remove_empty_key(obj)
@@ -347,6 +351,10 @@ func (c *WorkProject) ParseData(obj map[string]interface{}) {
 	if _, ok := obj["referenced_works"]; ok {
 		obj["referenced_works"] = shorten_id_form_list(obj["referenced_works"])
 	}
+	if _, ok := obj["topics"]; ok {
+		obj["topics"] = shorten_id_form_list(obj["topics"])
+	}
+
 	if _, ok := obj["abstract_inverted_index"]; ok {
 		obj["abstract"] = unAbstractInvertedIndex(obj["abstract_inverted_index"])
 		remove_key(obj, []string{"abstract_inverted_index"})

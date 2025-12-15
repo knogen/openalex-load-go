@@ -10,13 +10,15 @@ import (
 	"sync"
 
 	"github.com/emirpasic/gods/sets/hashset"
+	"github.com/klauspost/compress/zstd" // 引入 zstd 库
 	"github.com/rs/zerolog/log"
 	"github.com/schollz/progressbar/v3"
+	// 引入 zstd 库
 )
 
-func RuntimeToCsvFlow(c DataLoadInterface, runtimeCount int, version, outPath string, outFileCount int) {
-	jsonFilePath := fmt.Sprintf("%s_%s.json.gz-1", c.GetProjectName(), version)
-	jsonFilePath = filepath.Join(outPath, jsonFilePath)
+func RuntimeToNDJSONFlow(c DataLoadInterface, runtimeCount int, version, outPath string, outFileCount int) {
+	// jsonFilePath := fmt.Sprintf("%s_%s.json.gz-1", c.GetProjectName(), version)
+	// jsonFilePath = filepath.Join(outPath, jsonFilePath)
 	// log.Info().Str("jsonFilePath", jsonFilePath).Msg("out file path")
 	// log.Info().Int("runtionCount", runtimeCount).Msg("start")
 
@@ -25,13 +27,14 @@ func RuntimeToCsvFlow(c DataLoadInterface, runtimeCount int, version, outPath st
 		fileChan <- filePath
 	}
 	close(fileChan)
+	log.Info().Int("file count", len(c.GetProjectGzFiles())).Msg("all files loaded")
 
 	mergeIDSet := c.GetMergeIDsSet()
 
 	jsonChan := make(chan []byte, 10000)
 	wg := sync.WaitGroup{}
 	wg.Add(runtimeCount)
-	for i := 0; i < runtimeCount; i++ {
+	for range runtimeCount {
 		// handle file
 		go func() {
 			for filePath := range fileChan {
@@ -44,38 +47,45 @@ func RuntimeToCsvFlow(c DataLoadInterface, runtimeCount int, version, outPath st
 	fileWg.Add(outFileCount)
 
 	bar := progressbar.Default(-1)
-	for i := 0; i < outFileCount; i++ {
+	for i := range outFileCount {
 
-		jsonFilePath := fmt.Sprintf("%s_%s_p%v.json.gz", c.GetProjectName(), version, i)
+		jsonFilePath := fmt.Sprintf("%s_%s_p%v.jsonl.zst", c.GetProjectName(), version, i)
 		jsonFilePath = filepath.Join(outPath, jsonFilePath)
 
 		go func() {
+			defer fileWg.Done()
+
 			file, err := os.Create(jsonFilePath)
 			if err != nil {
 				fmt.Println("Error creating file:", err)
 				return
 			}
+			defer file.Close()
+
 			// 创建缓冲写入器
 			writer := bufio.NewWriterSize(file, 100*1024*1024)
-			gzWriter := gzip.NewWriter(writer)
+			defer writer.Flush()
+
+			enc, err := zstd.NewWriter(writer, zstd.WithEncoderLevel(zstd.SpeedDefault))
+			if err != nil {
+				log.Panic().Err(err).Msg("zstd writer create failed")
+			}
+			defer enc.Close()
 
 			line := []byte("\n")
 			for row := range jsonChan {
-				_, err := gzWriter.Write(row)
+				_, err := enc.Write(row)
 				if err != nil {
 					log.Panic().Err(err)
 				}
-				_, err = gzWriter.Write(line)
+				_, err = enc.Write(line)
 				if err != nil {
 					log.Panic().Err(err)
 				}
 
 				bar.Add(1)
 			}
-			gzWriter.Close()
-			writer.Flush()
-			file.Close()
-			fileWg.Done()
+
 		}()
 	}
 

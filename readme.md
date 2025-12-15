@@ -38,7 +38,7 @@ openalex 提供在线 api 和 snapshot 两种方式获取数据，我们使用 s
 从 [download-snapshot](https://docs.openalex.org/download-snapshot/download-to-your-machine) 中找到数据的下载和更新方式。安装好 `aws` 后通过:
 
 `/usr/bin/aws s3 sync "s3://openalex" "/home/ni/data/openalex-snapshot" --no-sign-request --delete`
-`/usr/bin/aws s3 sync "s3://openalex" "/mnt/sata3/openalex/openalex-snapshot-v20231225" --no-sign-request --delete`
+`/usr/bin/aws s3 sync "s3://openalex" "/mnt/hg02/openalex-snapshot-v20251210" --no-sign-request --delete`
 
 将 snapshot 同步到我们的本地。
 
