@@ -278,17 +278,19 @@ func shorten_doi(unKnowObj interface{}) {
 	}
 }
 
-func shorten_id_form_list(unKnowObj interface{}) []string {
+func shorten_id_form_list(unKnowObj any) []string {
 	if unKnowObj == nil {
 		return []string{}
 	}
 	var result []string
-	if objArray, ok := unKnowObj.([]interface{}); ok {
+	if objArray, ok := unKnowObj.([]any); ok {
 
 		for _, item := range objArray {
-			parts := strings.Split(item.(string), "/")
-			lastPart := parts[len(parts)-1]
-			result = append(result, lastPart)
+			if item != nil {
+				parts := strings.Split(item.(string), "/")
+				lastPart := parts[len(parts)-1]
+				result = append(result, lastPart)
+			}
 		}
 	} else {
 		result = append(result, "aaa")

@@ -139,6 +139,8 @@ func (c *ConceptProject) ParseData(obj map[string]interface{}) {
 	shorten_url(obj, []string{"id", "wikidata"})
 	shorten_url(obj["ids"].(map[string]interface{}), []string{"openalex", "wikidata", "wikipedia"})
 	remove_key(obj, []string{"image_url", "image_thumbnail_url", "works_api_url", "related_concepts"})
+	remove_empty_key(obj)
+	remove_empty_key(obj["ids"])
 	if _, ok := obj["ancestors"]; ok {
 		for _, item := range obj["ancestors"].([]interface{}) {
 			shorten_url(item, []string{"id", "wikidata"})
@@ -149,16 +151,35 @@ func (c *ConceptProject) ParseData(obj map[string]interface{}) {
 			shorten_url(item, []string{"id", "wikidata"})
 		}
 	}
-	remove_empty_key(obj)
 }
 
 func (c *InstitutionProject) ParseData(obj map[string]interface{}) {
 
-	shorten_url(obj, []string{"id", "ror", "wikidata"})
+	shorten_url(obj, []string{"id", "ror", "wikidata", "type_id"})
 	shorten_url(obj["ids"], []string{"openalex", "wikidata", "ror", "wikipedia"})
 	remove_key(obj, []string{"image_url", "image_thumbnail_url", "works_api_url", "associated_institutions", "x_concepts"})
 	remove_empty_key(obj)
 	remove_empty_key(obj["geo"])
+	remove_empty_key(obj["ids"])
+
+	for _, csItem := range iteratorList(obj["topics"]) {
+		shorten_url(csItem, []string{"id"})
+		remove_empty_key(csItem)
+		if sourceObj, ok := csItem.(map[string]interface{}); ok {
+			shorten_url(sourceObj["domain"], []string{"id"})
+			shorten_url(sourceObj["field"], []string{"id"})
+			shorten_url(sourceObj["subfield"], []string{"id"})
+		}
+	}
+	for _, csItem := range iteratorList(obj["topic_share"]) {
+		shorten_url(csItem, []string{"id"})
+		remove_empty_key(csItem)
+		if sourceObj, ok := csItem.(map[string]interface{}); ok {
+			shorten_url(sourceObj["domain"], []string{"id"})
+			shorten_url(sourceObj["field"], []string{"id"})
+			shorten_url(sourceObj["subfield"], []string{"id"})
+		}
+	}
 
 	if value, ok := obj["lineage"]; ok {
 		obj["lineage"] = shorten_id_form_list(value)
@@ -223,7 +244,7 @@ func (c *AuthorProject) ParseData(obj map[string]interface{}) {
 
 func (c *WorkProject) ParseData(obj map[string]interface{}) {
 	// v20251216
-	remove_key(obj, []string{"alternate_host_venues", "best_oa_location", "grants", "has_content", "host_venue"})
+	remove_key(obj, []string{"alternate_host_venues", "best_oa_location", "grants", "has_content", "host_venue", "open_access", "topics_key"})
 
 	remove_key(obj, []string{"apc_list", "apc_paid", "ngrams_url", "cited_by_api_url", "sustainable_development_goals"})
 	remove_key(obj["ids"], []string{"openalex", "doi"})
@@ -256,6 +277,14 @@ func (c *WorkProject) ParseData(obj map[string]interface{}) {
 			remove_key(asObj, []string{"raw_affiliation_string"})
 			remove_empty_key(asObj["author"])
 			remove_empty_key(asObj)
+
+			for _, isItem := range iteratorList(asObj["affiliations"]) {
+				if isObj, ok := isItem.(map[string]any); ok {
+					shorten_id_form_list(isObj["institution_ids"])
+					remove_empty_key(isObj)
+				}
+
+			}
 
 			for _, isItem := range iteratorList(asObj["institutions"]) {
 				if isObj, ok := isItem.(map[string]interface{}); ok {
@@ -295,7 +324,20 @@ func (c *WorkProject) ParseData(obj map[string]interface{}) {
 			floatNum = float32(v)
 		}
 		csObj["score"] = floatNum
+	}
+	for _, csItem := range iteratorList(obj["topics"]) {
+		shorten_url(csItem, []string{"id"})
+		remove_empty_key(csItem)
+		if sourceObj, ok := csItem.(map[string]interface{}); ok {
+			shorten_url(sourceObj["domain"], []string{"id"})
+			shorten_url(sourceObj["field"], []string{"id"})
+			shorten_url(sourceObj["subfield"], []string{"id"})
+		}
+	}
 
+	for _, csItem := range iteratorList(obj["keywords"]) {
+		shorten_url(csItem, []string{"id"})
+		remove_empty_key(csItem)
 	}
 
 	for _, loItem := range iteratorList(obj["locations"]) {
@@ -319,6 +361,18 @@ func (c *WorkProject) ParseData(obj map[string]interface{}) {
 				}
 			}
 
+		}
+	}
+
+	{
+		primary_topic := obj["primary_topic"]
+		if primary_topic != nil {
+			if sourceObj, ok := primary_topic.(map[string]interface{}); ok {
+				shorten_url(sourceObj["domain"], []string{"id"})
+				shorten_url(sourceObj["field"], []string{"id"})
+				shorten_url(sourceObj["subfield"], []string{"id"})
+			}
+			shorten_url(primary_topic, []string{"id"})
 		}
 	}
 
@@ -350,9 +404,6 @@ func (c *WorkProject) ParseData(obj map[string]interface{}) {
 
 	if _, ok := obj["referenced_works"]; ok {
 		obj["referenced_works"] = shorten_id_form_list(obj["referenced_works"])
-	}
-	if _, ok := obj["topics"]; ok {
-		obj["topics"] = shorten_id_form_list(obj["topics"])
 	}
 
 	if _, ok := obj["abstract_inverted_index"]; ok {

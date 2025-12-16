@@ -13,14 +13,9 @@ import (
 	"github.com/klauspost/compress/zstd" // 引入 zstd 库
 	"github.com/rs/zerolog/log"
 	"github.com/schollz/progressbar/v3"
-	// 引入 zstd 库
 )
 
 func RuntimeToNDJSONFlow(c DataLoadInterface, runtimeCount int, version, outPath string, outFileCount int) {
-	// jsonFilePath := fmt.Sprintf("%s_%s.json.gz-1", c.GetProjectName(), version)
-	// jsonFilePath = filepath.Join(outPath, jsonFilePath)
-	// log.Info().Str("jsonFilePath", jsonFilePath).Msg("out file path")
-	// log.Info().Int("runtionCount", runtimeCount).Msg("start")
 
 	fileChan := make(chan string, 10000)
 	for _, filePath := range c.GetProjectGzFiles() {
@@ -30,6 +25,7 @@ func RuntimeToNDJSONFlow(c DataLoadInterface, runtimeCount int, version, outPath
 	log.Info().Int("file count", len(c.GetProjectGzFiles())).Msg("all files loaded")
 
 	mergeIDSet := c.GetMergeIDsSet()
+	log.Info().Int("merge id count", mergeIDSet.Size()).Msg("merge ids loaded")
 
 	jsonChan := make(chan []byte, 10000)
 	wg := sync.WaitGroup{}
