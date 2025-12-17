@@ -55,10 +55,6 @@ func (c *BaseProject) GetMergeIDsSet() *hashset.Set {
 	return getMergeIDs(c.ProjectName, c.DataPath)
 }
 
-// func (c *BaseProject) parseData(obj map[string]interface{}) {
-// 	log.Panic().Msg("please rewrite parseData method")
-// }
-
 // get a base project
 func NewBaseProject(projectName, dataPath string) *BaseProject {
 	log.Info().Str("project", projectName).Msg("start")
@@ -89,8 +85,13 @@ type AuthorProject struct {
 type WorkProject struct {
 	*BaseProject
 }
-
 type TopicProject struct {
+	*BaseProject
+}
+type FieldProject struct {
+	*BaseProject
+}
+type SubfieldProject struct {
 	*BaseProject
 }
 
@@ -132,6 +133,15 @@ func NewWorkProject(dataPath string) *WorkProject {
 func NewTopicProject(dataPath string) *TopicProject {
 	BaseProject := NewBaseProject("topics", dataPath)
 	return &TopicProject{BaseProject}
+}
+
+func NewFieldProject(dataPath string) *FieldProject {
+	BaseProject := NewBaseProject("fields", dataPath)
+	return &FieldProject{BaseProject}
+}
+func NewSubfieldsProject(dataPath string) *SubfieldProject {
+	BaseProject := NewBaseProject("subfields", dataPath)
+	return &SubfieldProject{BaseProject}
 }
 
 func (c *ConceptProject) ParseData(obj map[string]interface{}) {
@@ -228,16 +238,43 @@ func (c *SourceProject) ParseData(obj map[string]interface{}) {
 func (c *AuthorProject) ParseData(obj map[string]interface{}) {
 
 	remove_empty_key(obj)
+	remove_empty_key(obj["ids"])
 	shorten_url(obj, []string{"id", "orcid"})
 	shorten_url(obj["ids"], []string{"openalex", "orcid"})
 	shorten_url(obj["last_known_institution"], []string{"id", "ror"})
 	remove_key(obj, []string{"works_api_url", "x_concepts"})
 
-	if lki, ok := obj["last_known_institution"]; ok {
-		lkiObj := lki.(map[string]interface{})
-		if value, ok := lkiObj["lineage"]; ok {
-			lkiObj["lineage"] = shorten_id_form_list(value)
+	for _, isItem := range iteratorList(obj["affiliations"]) {
+		affiliation := isItem.(map[string]any)
+		institution := affiliation["institution"].(map[string]any)
+		shorten_url(institution, []string{"id"})
+		institution["lineage"] = shorten_id_form_list(institution["lineage"])
+	}
+
+	for _, csItem := range iteratorList(obj["topic_share"]) {
+		shorten_url(csItem, []string{"id"})
+		remove_empty_key(csItem)
+		if sourceObj, ok := csItem.(map[string]interface{}); ok {
+			shorten_url(sourceObj["domain"], []string{"id"})
+			shorten_url(sourceObj["field"], []string{"id"})
+			shorten_url(sourceObj["subfield"], []string{"id"})
 		}
+	}
+	for _, csItem := range iteratorList(obj["topics"]) {
+		shorten_url(csItem, []string{"id"})
+		remove_empty_key(csItem)
+		if sourceObj, ok := csItem.(map[string]interface{}); ok {
+			shorten_url(sourceObj["domain"], []string{"id"})
+			shorten_url(sourceObj["field"], []string{"id"})
+			shorten_url(sourceObj["subfield"], []string{"id"})
+		}
+	}
+
+	for _, institution := range iteratorList(obj["last_known_institutions"]) {
+		remove_empty_key(institution)
+		shorten_url(institution, []string{"id", "ror"})
+		institutionObj := institution.(map[string]any)
+		institutionObj["lineage"] = shorten_id_form_list(institutionObj["lineage"])
 	}
 
 }
@@ -247,7 +284,7 @@ func (c *WorkProject) ParseData(obj map[string]interface{}) {
 	remove_key(obj, []string{"alternate_host_venues", "best_oa_location", "grants", "has_content", "host_venue", "open_access", "topics_key"})
 
 	remove_key(obj, []string{"apc_list", "apc_paid", "ngrams_url", "cited_by_api_url", "sustainable_development_goals"})
-	remove_key(obj["ids"], []string{"openalex", "doi"})
+	remove_key(obj["ids"], []string{"openalex", "doi", "type_id", "language_id"})
 	remove_empty_key(obj)
 	remove_empty_key(obj["biblio"])
 	remove_empty_key(obj["open_access"])
@@ -276,30 +313,27 @@ func (c *WorkProject) ParseData(obj map[string]interface{}) {
 			shorten_url(asObj["author"], []string{"id", "orcid"})
 			remove_key(asObj, []string{"raw_affiliation_string"})
 			remove_empty_key(asObj["author"])
+
+			if _, ok := asObj["country_ids"]; ok {
+				asObj["country_ids"] = shorten_id_form_list(asObj["country_ids"])
+			}
 			remove_empty_key(asObj)
 
 			for _, isItem := range iteratorList(asObj["affiliations"]) {
 				if isObj, ok := isItem.(map[string]any); ok {
-					shorten_id_form_list(isObj["institution_ids"])
+					isObj["institution_ids"] = shorten_id_form_list(isObj["institution_ids"])
 					remove_empty_key(isObj)
 				}
-
 			}
 
 			for _, isItem := range iteratorList(asObj["institutions"]) {
 				if isObj, ok := isItem.(map[string]interface{}); ok {
-					shorten_url(isObj, []string{"id", "ror"})
-					remove_empty_key(isObj)
+					shorten_url(isObj, []string{"id", "ror", "country_id", "type_id"})
 
-					if leObj, ok := isObj["lineage"]; ok {
-						cache := []string{}
-						for _, leItem := range leObj.([]interface{}) {
-							parts := strings.Split(leItem.(string), "/")
-							lastPart := parts[len(parts)-1]
-							cache = append(cache, lastPart)
-						}
-						isObj["lineage"] = cache
+					if _, ok := isObj["lineage"]; ok {
+						isObj["lineage"] = shorten_id_form_list(isObj["lineage"])
 					}
+					remove_empty_key(isObj)
 				}
 
 			}
@@ -346,7 +380,7 @@ func (c *WorkProject) ParseData(obj map[string]interface{}) {
 			remove_empty_key(sourceObj["source"])
 			remove_empty_key(sourceObj)
 
-			shorten_url(sourceObj["source"], []string{"id", "host_organization", "publisher_id"})
+			shorten_url(sourceObj["source"], []string{"id", "host_organization", "publisher_id", "type_id"})
 
 			if sourceObj["source"] != nil {
 				subSource := sourceObj["source"].(map[string]interface{})
@@ -416,6 +450,7 @@ func (c *WorkProject) ParseData(obj map[string]interface{}) {
 func (c *TopicProject) ParseData(obj map[string]interface{}) {
 
 	remove_empty_key(obj)
+	remove_key(obj, []string{"works_api_url"})
 	shorten_url(obj, []string{"id"})
 	shorten_url(obj["ids"], []string{"openalex", "wikipedia"})
 
@@ -423,7 +458,56 @@ func (c *TopicProject) ParseData(obj map[string]interface{}) {
 		shorten_url(csItem, []string{"id"})
 	}
 
+	domain := obj["domain"]
+	if domain != nil {
+		shorten_url(domain, []string{"id"})
+	}
+	field := obj["field"]
+	if field != nil {
+		shorten_url(field, []string{"id"})
+	}
+	subfield := obj["subfield"]
+	if subfield != nil {
+		shorten_url(subfield, []string{"id"})
+	}
+
 }
+
+func (c *FieldProject) ParseData(obj map[string]interface{}) {
+
+	remove_empty_key(obj)
+	remove_key(obj, []string{"works_api_url"})
+	shorten_url(obj, []string{"id"})
+	shorten_url(obj["ids"], []string{"openalex", "wikipedia", "wikidata"})
+	shorten_url(obj["domain"], []string{"id"})
+
+	for _, subfields := range iteratorList(obj["subfields"]) {
+		shorten_url(subfields, []string{"id"})
+	}
+	for _, siblings := range iteratorList(obj["siblings"]) {
+		shorten_url(siblings, []string{"id"})
+	}
+}
+
+func (c *SubfieldProject) ParseData(obj map[string]interface{}) {
+	remove_empty_key(obj)
+	remove_key(obj, []string{"works_api_url"})
+	shorten_url(obj, []string{"id"})
+	shorten_url(obj["ids"], []string{"openalex", "wikipedia", "wikidata"})
+	shorten_url(obj["domain"], []string{"id"})
+	shorten_url(obj["field"], []string{"id"})
+
+	for _, subfields := range iteratorList(obj["subfields"]) {
+		shorten_url(subfields, []string{"id"})
+	}
+	for _, siblings := range iteratorList(obj["siblings"]) {
+		shorten_url(siblings, []string{"id"})
+	}
+	for _, topics := range iteratorList(obj["topics"]) {
+		shorten_url(topics, []string{"id"})
+	}
+}
+
 func Main() {
 	// mergeIDSet := getMergeIDs("sources", foldPath)
 	// log.Info().Int("size", mergeIDSet.Size()).Msg("start")

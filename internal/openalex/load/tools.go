@@ -8,7 +8,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"openalex-load-go/internal/utils"
 	"os"
@@ -222,8 +221,11 @@ func shorten_url(unKnowObj interface{}, keyList []string) {
 				obj[key] = lastPart
 			} else if url, ok := value.(int); ok {
 				obj[key] = strconv.Itoa(url)
+			} else if val, ok := value.(float64); ok {
+				// Convert float64 to int, then to string
+				obj[key] = strconv.Itoa(int(val))
 			} else {
-				log.Error().Msg("UnKnow Object:" + fmt.Sprintf("%v+", obj[key]))
+				log.Warn().Str("key", key).Any("unKnowObj", unKnowObj).Any("obj[key]", obj[key]).Msg("UnKnow Object")
 			}
 		}
 	}
@@ -235,9 +237,7 @@ func remove_key(unKnowObj interface{}, keyList []string) {
 	}
 	obj := unKnowObj.(map[string]interface{})
 	for _, key := range keyList {
-		if _, ok := obj[key]; ok {
-			delete(obj, key)
-		}
+		delete(obj, key)
 	}
 }
 
@@ -351,7 +351,7 @@ func getMergeIDs(projectName, dataPath string) *hashset.Set {
 
 		reader := csv.NewReader(gz)
 
-		head, err := reader.Read()
+		head, _ := reader.Read()
 		ID := utils.IndexOf(head, "id")
 
 		for {

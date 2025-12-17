@@ -13,32 +13,27 @@ a2:
 a3:
 	go run main.go analyze authors20231218 -p 3 -t 10
 o1:
-# 		case 4:
-# 			cp := load.NewFunderProject(foldPath)
-# 			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-# 		case 5:
-# 			cp := load.NewSourceProject(foldPath)
-# 			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-# 		case 6:
-# 			cp := load.NewAuthorProject(foldPath)
-# 			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-# 		case 7:
-# 			cp := load.NewWorkProject(foldPath)
-# 			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-# 		case 8:
-# 			cp := load.NewTopicProject(foldPath)
-# 			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-# 	go run main.go  loadToNDJSON -v 20251210  -O /mnt/hg01/openalex/parse_output -t 40  -p 7  -c 10
 # # Concept
 # 	go run main.go  loadToNDJSON -v 20251210  -O  /mnt/hg01/openalex/parse_output -t 20 -c 1 -p 1  
-## # Institution
+# # Institution
 # 	go run main.go  loadToNDJSON -v 20251210  -O  /mnt/hg01/openalex/parse_output -t 20 -c 1 -p 2 
-# # Publisher
-	go run main.go  loadToNDJSON -v 20251210  -O  /mnt/hg01/openalex/parse_output -t 20 -c 1 -p 3
+# # # Publisher
+# 	go run main.go  loadToNDJSON -v 20251210  -O  /mnt/hg01/openalex/parse_output -t 20 -c 1 -p 3
+# # Funder
+# 	go run main.go  loadToNDJSON -v 20251210  -O  /mnt/hg01/openalex/parse_output -t 20 -c 1 -p 4
+# # Source
+# 	go run main.go  loadToNDJSON -v 20251210  -O  /mnt/hg01/openalex/parse_output -t 20 -c 1 -p 5
+# Author
+	go run main.go  loadToNDJSON -v 20251210  -O  /mnt/hg01/openalex/parse_output -t 20 -c 10 -p 6
+# # Topic
+# 	go run main.go  loadToNDJSON -v 20251210  -O  /mnt/hg01/openalex/parse_output -t 20 -c 1 -p 8
+# # Field
+# 	go run main.go  loadToNDJSON -v 20251210  -O  /mnt/hg01/openalex/parse_output -t 20 -c 1 -p 9
+# # # Subfields
+# 	go run main.go  loadToNDJSON -v 20251210  -O  /mnt/hg01/openalex/parse_output -t 20 -c 1 -p 10
 
 o2:
-	go run main.go  loadToNDJSON -v 20241201  -O  /mnt/hg01/openalex/parse_output -t 40  -p 1  -c 1
-	go run main.go  loadToNDJSON -v 20241201  -O  /mnt/hg01/openalex/parse_output -t 40  -p 6  -c 1
+	go run main.go  loadToNDJSON -v 20251210  -O /mnt/hg01/openalex/parse_output -t 40 -p 7  -c 10
 
 loadToMongo:
 	go run main.go loadToMongo

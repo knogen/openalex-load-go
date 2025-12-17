@@ -12,6 +12,35 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// 1. 提取工厂方法：消除重复的 switch case
+// 根据 index 和路径创建一个新的 Project 实例
+func createProjectLoader(index int, dataPath string) load.DataLoadInterface {
+	switch index {
+	case 1:
+		return load.NewConceptProject(dataPath)
+	case 2:
+		return load.NewInstitutionProject(dataPath)
+	case 3:
+		return load.NewPublisherProject(dataPath)
+	case 4:
+		return load.NewFunderProject(dataPath)
+	case 5:
+		return load.NewSourceProject(dataPath)
+	case 6:
+		return load.NewAuthorProject(dataPath)
+	case 7:
+		return load.NewWorkProject(dataPath)
+	case 8:
+		return load.NewTopicProject(dataPath)
+	case 9:
+		return load.NewFieldProject(dataPath)
+	case 10:
+		return load.NewSubfieldsProject(dataPath)
+	default:
+		return nil
+	}
+}
+
 // loadToNDJSONCmd represents the loadToCsv command
 var loadToNDJSONCmd = &cobra.Command{
 	Use:   "loadToNDJSON",
@@ -54,37 +83,24 @@ to quickly create a Cobra application.`,
 
 		outFileCount, _ := cmd.Flags().GetInt("outFileCount")
 
+		// --- 2. Phase 1: 处理主数据 (Data) ---
+		log.Info().Msg(">>> Phase 1: Processing Main DATA")
 		// foldPath := fmt.Sprintf("/mnt/sata3/openalex/openalex-snapshot-v%s/data", Version)
 		foldPath := fmt.Sprintf("/mnt/hg02/openalex-snapshot-v%s/data", Version)
-
-		switch projectIndex {
-		case 1:
-			cp := load.NewConceptProject(foldPath)
-			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-		case 2:
-			cp := load.NewInstitutionProject(foldPath)
-			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-		case 3:
-			cp := load.NewPublisherProject(foldPath)
-			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-		case 4:
-			cp := load.NewFunderProject(foldPath)
-			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-		case 5:
-			cp := load.NewSourceProject(foldPath)
-			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-		case 6:
-			cp := load.NewAuthorProject(foldPath)
-			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-		case 7:
-			cp := load.NewWorkProject(foldPath)
-			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-		case 8:
-			cp := load.NewTopicProject(foldPath)
-			load.RuntimeToNDJSONFlow(cp, treadCount, Version, outPath, outFileCount)
-		default:
-			log.Warn().Msg("Please set project index")
+		cpData := createProjectLoader(projectIndex, foldPath)
+		if cpData == nil {
+			log.Fatal().Int("index", projectIndex).Msg("invalid project index")
 		}
+		processedSet := load.RuntimeToNDJSONFlow(cpData, treadCount, Version, outPath, outFileCount, nil, "Walden")
+
+		log.Info().Int64("count", processedSet.Size()).Msg("Phase 1 Complete. Starting Legacy...")
+		// --- 3. Phase 2: 处理遗留数据 (Legacy) ---
+		log.Info().Msg(">>> Phase 2: Processing LEGACY DATA")
+		foldPath = fmt.Sprintf("/mnt/hg02/openalex-snapshot-v%s/legacy-data", Version)
+		cpLegacy := createProjectLoader(projectIndex, foldPath)
+		load.RuntimeToNDJSONFlow(cpLegacy, treadCount, Version, outPath, outFileCount, processedSet, "legacy")
+
+		log.Info().Msg(">>> All Done")
 	},
 }
 
@@ -101,6 +117,8 @@ func init() {
 	6: auther
 	7: work
 	8: topic
+	9: field
+	10: subfields
 	choose one
 	`)
 	loadToNDJSONCmd.Flags().StringP("out", "O", "/tmp/", `out data path`)
